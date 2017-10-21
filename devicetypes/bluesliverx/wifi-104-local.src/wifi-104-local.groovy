@@ -19,14 +19,12 @@ def version() {
 }
 
 preferences {
-    section {
-        input("mac", "string", title: "MAC Address (no colons)", required: true, displayDuringSetup: true)
-        paragraph "Version: ${version()}"
-    }
+    input("mac", "string", title: "MAC Address (no colons)", required: true, displayDuringSetup: true)
+    input(title:"", description: "Version: ${version()}", type: "paragraph", element: "paragraph")
 }
 
 metadata {
-    definition (name: "Wifi 104 (local)", namespace: "bluesliverx", author: "Brian Saville") {
+    definition (name: "Wifi 104 Local", namespace: "bluesliverx", author: "Brian Saville") {
         capability "Color Control"
         capability "Switch"
         capability "Refresh"
@@ -46,46 +44,27 @@ metadata {
     }
 
     tiles(scale: 2) {
-        // this tile is used for display in device list (to get correct colorization)
-        valueTile(
-                "power",
-                "device.power") {
-            state("power",
-                    label: '${currentValue}W',
-                    unit: "W",
-                    icon: "https://raw.githubusercontent.com/ahndee/Envoy-ST/master/devicetypes/aamann/enlighten-envoy-local.src/Solar.png",
-                    backgroundColors: [
-                            [value: 0, color: "#bc2323"],
-                            [value: 1000, color: "#1e9cbb"],
-                            [value: 2000, color: "#90d2a7"]
-                    ])
-        }
-        // this tile is used only to provide an icon in the recent events list
-        valueTile(
-                "energy",
-                "device.energy") {
-            state("energy",
-                    label: '${currentValue}',
-                    unit: "kWh")
-        }
-        // the following tiles are used for display in the device handler
-        multiAttributeTile(name: "switch", type: "lighting", width: 6, height: 4, canChangeIcon: true) {
-            tileAttribute("device.switch", key: "PRIMARY_CONTROL") {
-                attributeState "on", label: '${name}', action: "lightsOff", icon: "st.Seasonal Winter.seasonal-winter-011",
-                        backgroundColor: "#79b821", nextState: "off"
-                attributeState "off", label: '${name}', action: "lightsOn", icon: "st.Seasonal Winter.seasonal-winter-011",
-                        backgroundColor: "#ffffff", nextState: "on"
+        multiAttributeTile(name:"Zone 1", type: "lighting", width: 6, height: 4) {
+            tileAttribute ("device.switch", key: "PRIMARY_CONTROL") {
+                attributeState "on", label:'${name}', action:"switch.off", icon:"st.Seasonal Winter.seasonal-winter-011", backgroundColor:"#00a0dc"
+                attributeState "off", label:'${name}', action:"switch.on", icon:"st.Seasonal Winter.seasonal-winter-011", backgroundColor:"#ffffff"
             }
-            tileAttribute("device.zone1Color", key: "COLOR_CONTROL", label:"Zone 1 Color") {
-                attributeState "color", action: "setZone1Color"
+            tileAttribute ("device.color", key: "COLOR_CONTROL") {
+                attributeState "color", action:"setAdjustedColor"
             }
-            tileAttribute("device.zone2Color", key: "COLOR_CONTROL", label:"Zone 2 Color") {
-                attributeState "color", action: "setZone2Color"
+        }
+        multiAttributeTile(name:"Zone 2", type: "lighting", width: 6, height: 4) {
+            tileAttribute ("device.switch", key: "PRIMARY_CONTROL") {
+                attributeState "on", label:'${name}', action:"switch.on", icon:"st.Seasonal Winter.seasonal-winter-011", backgroundColor:"#00a0dc"
+                attributeState "off", label:'${name}', action:"switch.off", icon:"st.Seasonal Winter.seasonal-winter-011", backgroundColor:"#ffffff"
+            }
+            tileAttribute ("device.color", key: "COLOR_CONTROL") {
+                attributeState "color", action:"setAdjustedColor"
             }
         }
 
         main "switch"
-        details(["switch", "refresh"])
+        details(["refresh"])
     }
 }
 
@@ -113,6 +92,10 @@ private def updateDNI() {
         device.setDeviceNetworkId(bytesToHex(settings.mac))
         state.dni = device.deviceNetworkId
     }
+}
+
+def parse(String description) {
+    log.info("Parse ${description}")
 }
 
 //def toggleOffColorTiles() {
