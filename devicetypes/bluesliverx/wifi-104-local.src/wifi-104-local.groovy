@@ -73,7 +73,7 @@ metadata {
                 attributeState "color", action:"setZone1Color"
             }
         }
-        standardTile(name:"zone2", width: 6, height: 4) {
+        multiAttributeTile(name:"zone2", width: 6, height: 4) {
             tileAttribute ("zone2Switch", key: "PRIMARY_CONTROL") {
                 attributeState "on", label:'${name}', action:"zone2Off", icon:"st.Seasonal Winter.seasonal-winter-011", backgroundColor:"#00a0dc"
                 attributeState "off", label:'${name}', action:"zone2On", icon:"st.Seasonal Winter.seasonal-winter-011", backgroundColor:"#ffffff"
@@ -124,26 +124,36 @@ def refresh() {
 
 def zone1On() {
     log.debug("Zone 1 on")
+    sendEvent(name:"zone1Switch", value:"on")
 }
 
 def zone1Off() {
     log.debug("Zone 1 off")
+    sendEvent(name:"zone1Switch", value:"off")
 }
 
 def setZone1Color(value) {
     log.debug("set zone 1 color to ${value}")
+    if (setColor(1, value)) {
+        sendEvent(name: "zone1Color", value: value.hex)
+    }
 }
 
 def zone2On() {
     log.debug("Zone 2 on")
+    sendEvent(name:"zone2Switch", value:"on")
 }
 
 def zone2Off() {
     log.debug("Zone 2 off")
+    sendEvent(name:"zone2Switch", value:"off")
 }
 
 def setZone2Color(value) {
     log.debug("set zone 2 color to ${value}")
+    if (setColor(2, value)) {
+        sendEvent(name: "zone2Color", value: value.hex)
+    }
 }
 
 //def toggleOffColorTiles() {
@@ -177,7 +187,6 @@ def lightsOff() {
 }
 
 def setColor(int zone, value) {
-    def result = []
     log.info "setColor: ${value}"
 
     if (value.hex) {
