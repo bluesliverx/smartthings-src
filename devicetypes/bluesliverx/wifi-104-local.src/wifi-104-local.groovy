@@ -66,8 +66,10 @@ metadata {
         }
         multiAttributeTile(name:"zone1", type: "lighting", width: 6, height: 4) {
             tileAttribute ("zone1Switch", key: "PRIMARY_CONTROL") {
-                attributeState "on", label:'${name}', action:"zone1Off", icon:"st.Seasonal Winter.seasonal-winter-011", backgroundColor:"#00a0dc"
-                attributeState "off", label:'${name}', action:"zone1On", icon:"st.Seasonal Winter.seasonal-winter-011", backgroundColor:"#ffffff"
+                attributeState "on", label:'${name}', action:"zone1Off", icon:"st.Seasonal Winter.seasonal-winter-011", backgroundColor:"#00A0DC", nextState:"turningOff"
+                attributeState "off", label:'${name}', action:"zone1On", icon:"st.Seasonal Winter.seasonal-winter-011", backgroundColor:"#ffffff", nextState:"turningOn"
+                attributeState "turningOn", label:'${name}', action:"zone1Off", icon:"st.Seasonal Winter.seasonal-winter-011", backgroundColor:"#00A0DC", nextState:"turningOff"
+                attributeState "turningOff", label:'${name}', action:"zone1On", icon:"st.Seasonal Winter.seasonal-winter-011", backgroundColor:"#ffffff", nextState:"turningOn"
             }
             tileAttribute ("zone1Color", key: "COLOR_CONTROL") {
                 attributeState "color", action:"setZone1Color"
@@ -75,8 +77,10 @@ metadata {
         }
         multiAttributeTile(name:"zone2", width: 6, height: 4) {
             tileAttribute ("zone2Switch", key: "PRIMARY_CONTROL") {
-                attributeState "on", label:'${name}', action:"zone2Off", icon:"st.Seasonal Winter.seasonal-winter-011", backgroundColor:"#00a0dc"
-                attributeState "off", label:'${name}', action:"zone2On", icon:"st.Seasonal Winter.seasonal-winter-011", backgroundColor:"#ffffff"
+                attributeState "on", label:'${name}', action:"zone2Off", icon:"st.Seasonal Winter.seasonal-winter-011", backgroundColor:"#00A0DC", nextState:"turningOff"
+                attributeState "off", label:'${name}', action:"zone2On", icon:"st.Seasonal Winter.seasonal-winter-011", backgroundColor:"#ffffff", nextState:"turningOn"
+                attributeState "turningOn", label:'${name}', action:"zone2Off", icon:"st.Seasonal Winter.seasonal-winter-011", backgroundColor:"#00A0DC", nextState:"turningOff"
+                attributeState "turningOff", label:'${name}', action:"zone2On", icon:"st.Seasonal Winter.seasonal-winter-011", backgroundColor:"#ffffff", nextState:"turningOn"
             }
             tileAttribute ("zone2Color", key: "COLOR_CONTROL") {
                 attributeState "color", action:"setZone2Color"
@@ -214,13 +218,10 @@ def setColor(int zone, value) {
 }
 
 private void sendCommand(List command) {
-    sendCommand(command.toArray(new byte[0]))
-}
-
-private void sendCommand(byte[] command) {
     updateDNI()
+    def bytes = command.toArray(new byte[0])
 
-    log.info "${comand.length} ${bytesToHex(command)} to MAC ${getDataValue('mac')}"
-    String strCommand = new String(command, "ISO-8859-1")
+    log.info "${command.length} ${bytesToHex(command)} to MAC ${getDataValue('mac')}"
+    String strCommand = new String(bytes, "ISO-8859-1")
     sendHubCommand(new physicalgraph.device.HubAction(strCommand, physicalgraph.device.Protocol.LAN, getDataValue("mac")))
 }

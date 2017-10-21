@@ -3,7 +3,7 @@
 import socket
 import sys
 
-TCP_IP = '192.168.1.xxx'
+TCP_IP = '192.168.1.104'
 TCP_PORT = 8899
 BUFFER_SIZE = 1024
 messages = {
