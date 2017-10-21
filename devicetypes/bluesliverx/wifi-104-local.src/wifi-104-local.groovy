@@ -98,6 +98,18 @@ def parse(String description) {
     log.info("Parse ${description}")
 }
 
+def setColor() {
+    log.info "setColor with no args, ${properties}"
+}
+
+def on() {
+    log.info "on, ${properties}"
+}
+
+def off() {
+    log.info "off, ${properties}"
+}
+
 //def toggleOffColorTiles() {
 //    sendEvent(name: "zone1Color", value: device.zone1Color, displayed: false, isStateChange: true)
 //    sendEvent(name: "zone2Color", value: device.zone2Color, displayed: false, isStateChange: true)
