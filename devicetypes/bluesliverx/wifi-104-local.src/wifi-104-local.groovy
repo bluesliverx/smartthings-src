@@ -217,11 +217,20 @@ def setColor(int zone, value) {
 //    commands(result)
 }
 
+private byte[] hexListToByteArray(List bytes) {
+    int len = bytes.size();
+    byte[] data = new byte[len];
+    for (int i = 0; i < len; i++) {
+        data[i] = (byte) bytes[i];
+    }
+    return data;
+}
+
 private void sendCommand(List command) {
     updateDNI()
-    def bytes = command.toArray(new byte[0])
 
-    log.info "${command.length} ${bytesToHex(command)} to MAC ${getDataValue('mac')}"
+    byte[] bytes = hexListToByteArray(command)
     String strCommand = new String(bytes, "ISO-8859-1")
+    log.info "${command.length} ${strCommand} to MAC ${getDataValue('mac')}"
     sendHubCommand(new physicalgraph.device.HubAction(strCommand, physicalgraph.device.Protocol.LAN, getDataValue("mac")))
 }
