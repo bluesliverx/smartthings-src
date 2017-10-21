@@ -19,11 +19,10 @@ def version() {
 }
 
 preferences {
-    input("mac", "string", title:"Wifi 104 Local MAC Address (no colons)",
-            required: true, displayDuringSetup: true)
-//    input("pollingInterval", "number", title:"Polling Interval (min)",
-//            defaultValue:"1", range: "2..59", required: true, displayDuringSetup: true)
-    input(title:"", description: "Version: ${version()}", type: "paragraph", element: "paragraph")
+    section {
+        input("mac", "string", title: "MAC Address (no colons)", required: true, displayDuringSetup: true)
+        paragraph "Version: ${version()}"
+    }
 }
 
 metadata {
