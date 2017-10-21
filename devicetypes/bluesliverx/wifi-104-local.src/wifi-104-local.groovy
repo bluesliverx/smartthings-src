@@ -37,6 +37,11 @@ metadata {
 //        attribute "efficiency", "string"
 //        attribute "efficiency_yesterday", "string"
 //        attribute "efficiency_last7days", "string"
+
+        command "lightsOn"
+        command "lightsOff"
+        command "setZone1Color"
+        command "setZone2Color"
     }
 
     simulator {
@@ -44,27 +49,33 @@ metadata {
     }
 
     tiles(scale: 2) {
-        multiAttributeTile(name:"Zone 1", type: "lighting", width: 6, height: 4) {
+        valueTile("zone1Color", "device.color") {
+            state "color", label: '${currentValue}', defaultState: true
+        }
+        controlTile("zone1ColorControl", "device.color", "color", height: 6, width: 6, inactiveLabel: false) {
+            state "color", action: "setZone1Color"
+        }
+        multiAttributeTile(name:"zone1", type: "lighting", width: 6, height: 4) {
             tileAttribute ("device.switch", key: "PRIMARY_CONTROL") {
-                attributeState "on", label:'${name}', action:"switch.off", icon:"st.Seasonal Winter.seasonal-winter-011", backgroundColor:"#00a0dc"
-                attributeState "off", label:'${name}', action:"switch.on", icon:"st.Seasonal Winter.seasonal-winter-011", backgroundColor:"#ffffff"
+                attributeState "on", label:'${name}', action:"zone1Off", icon:"st.Seasonal Winter.seasonal-winter-011", backgroundColor:"#00a0dc"
+                attributeState "off", label:'${name}', action:"zone2On", icon:"st.Seasonal Winter.seasonal-winter-011", backgroundColor:"#ffffff"
             }
             tileAttribute ("device.color", key: "COLOR_CONTROL") {
-                attributeState "color", action:"setAdjustedColor"
+                attributeState "color", action:"setZone1Color"
             }
         }
-        multiAttributeTile(name:"Zone 2", type: "lighting", width: 6, height: 4) {
+        standardTile(name:"zone2", width: 6, height: 4) {
             tileAttribute ("device.switch", key: "PRIMARY_CONTROL") {
-                attributeState "on", label:'${name}', action:"switch.on", icon:"st.Seasonal Winter.seasonal-winter-011", backgroundColor:"#00a0dc"
-                attributeState "off", label:'${name}', action:"switch.off", icon:"st.Seasonal Winter.seasonal-winter-011", backgroundColor:"#ffffff"
+                attributeState "on", label:'${name}', action:"zone2Off", icon:"st.Seasonal Winter.seasonal-winter-011", backgroundColor:"#00a0dc"
+                attributeState "off", label:'${name}', action:"zone2On", icon:"st.Seasonal Winter.seasonal-winter-011", backgroundColor:"#ffffff"
             }
             tileAttribute ("device.color", key: "COLOR_CONTROL") {
-                attributeState "color", action:"setAdjustedColor"
+                attributeState "color", action:"setZone2Color"
             }
         }
 
-        main "switch"
-        details(["refresh"])
+        main "zone1Color"
+        details(["zone1ColorControl", "zone1", "zone2", "refresh"])
     }
 }
 
@@ -98,16 +109,32 @@ def parse(String description) {
     log.info("Parse ${description}")
 }
 
-def setColor() {
-    log.info "setColor with no args, ${properties}"
+def refresh() {
+    log.debug("Refresh")
 }
 
-def on() {
-    log.info "on, ${properties}"
+def zone1On() {
+    log.debug("Zone 1 on")
 }
 
-def off() {
-    log.info "off, ${properties}"
+def zone1Off() {
+    log.debug("Zone 1 off")
+}
+
+def setZone1Color(value) {
+    log.debug("set zone 1 color to ${value}")
+}
+
+def zone2On() {
+    log.debug("Zone 2 on")
+}
+
+def zone2Off() {
+    log.debug("Zone 2 off")
+}
+
+def setZone2Color(value) {
+    log.debug("set zone 2 color to ${value}")
 }
 
 //def toggleOffColorTiles() {
@@ -138,14 +165,6 @@ def lightsOn() {
 def lightsOff() {
     log.info("Turning lights off")
     sendCommand([0x55,0xaa,0x17,0x0f,0x08,0x11,0x0e,0x59,0xff,0xff,0x02,0x00,0x00,0x00,0x00,0xea])
-}
-
-def setZone1Color(value) {
-    setColor(1, value)
-}
-
-def setZone2Color(value) {
-    setColor(2, value)
 }
 
 def setColor(int zone, value) {
