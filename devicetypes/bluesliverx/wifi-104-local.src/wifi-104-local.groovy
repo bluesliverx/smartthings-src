@@ -38,6 +38,10 @@ metadata {
 //        attribute "efficiency_yesterday", "string"
 //        attribute "efficiency_last7days", "string"
 
+        command "zone1On"
+        command "zone2On"
+        command "zone1Off"
+        command "zone2Off"
         command "lightsOn"
         command "lightsOff"
         command "setZone1Color"
