@@ -38,6 +38,11 @@ metadata {
 //        attribute "efficiency_yesterday", "string"
 //        attribute "efficiency_last7days", "string"
 
+        attribute("zone1Switch", "enum", ["on", "off"])
+        attribute("zone2Switch", "enum", ["on", "off"])
+        attribute("zone1Color", "string")
+        attribute("zone2Color", "string")
+
         command "zone1On"
         command "zone2On"
         command "zone1Off"
@@ -60,20 +65,20 @@ metadata {
             state "color", action: "setZone1Color"
         }
         multiAttributeTile(name:"zone1", type: "lighting", width: 6, height: 4) {
-            tileAttribute ("device.switch", key: "PRIMARY_CONTROL") {
+            tileAttribute ("zone1Switch", key: "PRIMARY_CONTROL") {
                 attributeState "on", label:'${name}', action:"zone1Off", icon:"st.Seasonal Winter.seasonal-winter-011", backgroundColor:"#00a0dc"
                 attributeState "off", label:'${name}', action:"zone2On", icon:"st.Seasonal Winter.seasonal-winter-011", backgroundColor:"#ffffff"
             }
-            tileAttribute ("device.color", key: "COLOR_CONTROL") {
+            tileAttribute ("zone1Color", key: "COLOR_CONTROL") {
                 attributeState "color", action:"setZone1Color"
             }
         }
         standardTile(name:"zone2", width: 6, height: 4) {
-            tileAttribute ("device.switch", key: "PRIMARY_CONTROL") {
+            tileAttribute ("zone2Switch", key: "PRIMARY_CONTROL") {
                 attributeState "on", label:'${name}', action:"zone2Off", icon:"st.Seasonal Winter.seasonal-winter-011", backgroundColor:"#00a0dc"
                 attributeState "off", label:'${name}', action:"zone2On", icon:"st.Seasonal Winter.seasonal-winter-011", backgroundColor:"#ffffff"
             }
-            tileAttribute ("device.color", key: "COLOR_CONTROL") {
+            tileAttribute ("zone2Color", key: "COLOR_CONTROL") {
                 attributeState "color", action:"setZone2Color"
             }
         }
