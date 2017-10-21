@@ -67,7 +67,7 @@ metadata {
         multiAttributeTile(name:"zone1", type: "lighting", width: 6, height: 4) {
             tileAttribute ("zone1Switch", key: "PRIMARY_CONTROL") {
                 attributeState "on", label:'${name}', action:"zone1Off", icon:"st.Seasonal Winter.seasonal-winter-011", backgroundColor:"#00a0dc"
-                attributeState "off", label:'${name}', action:"zone2On", icon:"st.Seasonal Winter.seasonal-winter-011", backgroundColor:"#ffffff"
+                attributeState "off", label:'${name}', action:"zone1On", icon:"st.Seasonal Winter.seasonal-winter-011", backgroundColor:"#ffffff"
             }
             tileAttribute ("zone1Color", key: "COLOR_CONTROL") {
                 attributeState "color", action:"setZone1Color"
@@ -211,6 +211,10 @@ def setColor(int zone, value) {
 //    if (value.saturation) sendEvent(name: "saturation", value: value.saturation, displayed: false)
 
 //    commands(result)
+}
+
+private void sendCommand(List command) {
+    sendCommand(command.toArray(new byte[0]))
 }
 
 private void sendCommand(byte[] command) {
