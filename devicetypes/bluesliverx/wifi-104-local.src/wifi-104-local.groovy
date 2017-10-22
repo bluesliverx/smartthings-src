@@ -222,16 +222,16 @@ def setColor(int zone, value) {
 //    commands(result)
 }
 
-private byte[] hexListToByteArray(List bytes) {
+private byte[] hexListToByteArray(List<Integer> bytes) {
     int len = bytes.size();
     byte[] data = new byte[len];
     for (int i = 0; i < len; i++) {
-        data[i] = (byte) bytes[i];
+        data[i] = bytes.get(i).toInteger().byteValue();
     }
     return data;
 }
 
-private void sendCommand(List command) {
+private void sendCommand(List<Integer> command) {
     updateDNI()
 
     byte[] bytes = hexListToByteArray(command)
