@@ -113,7 +113,8 @@ def updated() {
 
 private def updateDNI() {
     if (!state.dni || state.dni != device.deviceNetworkId || (settings.mac && settings.mac != device.deviceNetworkId)) {
-        device.setDeviceNetworkId(bytesToHex(settings.mac))
+        log.debug("Setting DNI to ${settings.mac}")
+        device.setDeviceNetworkId(settings.mac)
         state.dni = device.deviceNetworkId
     }
 }
