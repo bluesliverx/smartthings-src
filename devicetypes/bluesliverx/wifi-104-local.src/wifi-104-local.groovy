@@ -232,6 +232,6 @@ private void sendCommand(List command) {
 
     byte[] bytes = hexListToByteArray(command)
     String strCommand = new String(bytes, "ISO-8859-1")
-    log.info "${bytes.length} ${strCommand} to MAC ${getDataValue('mac')}"
-    sendHubCommand(new physicalgraph.device.HubAction(strCommand, physicalgraph.device.Protocol.LAN, getDataValue("mac")))
+    log.info "${bytes.length} ${bytes} to MAC ${settings.mac}"
+    sendHubCommand(new physicalgraph.device.HubAction(strCommand, physicalgraph.device.Protocol.LAN, settings.mac))
 }
