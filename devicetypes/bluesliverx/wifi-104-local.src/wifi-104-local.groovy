@@ -129,11 +129,13 @@ def refresh() {
 
 def zone1On() {
     log.debug("Zone 1 on")
+    lightsOn()
     sendEvent(name:"zone1Switch", value:"on")
 }
 
 def zone1Off() {
     log.debug("Zone 1 off")
+    lightsOff()
     sendEvent(name:"zone1Switch", value:"off")
 }
 
@@ -145,12 +147,14 @@ def setZone1Color(value) {
 }
 
 def zone2On() {
+    lightsOn()
     log.debug("Zone 2 on")
     sendEvent(name:"zone2Switch", value:"on")
 }
 
 def zone2Off() {
     log.debug("Zone 2 off")
+    lightsOff()
     sendEvent(name:"zone2Switch", value:"off")
 }
 
