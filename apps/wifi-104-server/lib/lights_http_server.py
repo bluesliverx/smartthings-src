@@ -30,30 +30,38 @@ class LightsHTTPServerHandler(BaseHTTPRequestHandler):
     response_code = 200
     params = self.get_query_params()
 
-    if self.path == '/lights/all-on':
+    if self.path == '/lights/zones/all/on':
       message = self.turn_lights_on()
-    elif self.path == '/lights/all-off':
+    elif self.path == '/lights/zones/all/off':
       message = self.turn_lights_off()
     elif self.path.startswith('/lights/zones/1/on'):
       message = self.turn_lights_on(1)
     elif self.path.startswith('/lights/zones/1/off'):
       message = self.turn_lights_off(1)
     elif self.path.startswith('/lights/zones/1/color'):
-      if 'red' not in params or 'green' not in params or 'blue' not in params:
+      if 'red' not in params or 'green' not in params or 'blue' not in params or 'white' not in params:
         response_code = 400
-        message = 'Please include "red", "green", and "blue" params as integers'
+        message = 'Please include "red", "green", "blue", and "white" params as integers'
       else:
-        message = self.set_color(1, int(params['red']), int(params['green']), int(params['blue']))
+        # Default to full brightness
+        brightness = 0xff
+        if 'brightness' in params:
+          brightness = int(params['brightness'])
+        message = self.set_color(1, int(params['red']), int(params['green']), int(params['blue']), int(params['white']), brightness)
     elif self.path.startswith('/lights/zones/2/on'):
       message = self.turn_lights_on(2)
     elif self.path.startswith('/lights/zones/2/off'):
       message = self.turn_lights_off(2)
     elif self.path.startswith('/lights/zones/2/color'):
-      if 'red' not in params or 'green' not in params or 'blue' not in params:
+      if 'red' not in params or 'green' not in params or 'blue' not in params or 'white' not in params:
         response_code = 400
-        message = 'Please include "red", "green", and "blue" params as integers'
+        message = 'Please include "red", "green", "blue", and "white" params as integers'
       else:
-        message = self.set_color(2, int(params['red']), int(params['green']), int(params['blue']))
+        # Default to full brightness
+        brightness = 0xff
+        if 'brightness' in params:
+          brightness = int(params['brightness'])
+        message = self.set_color(2, int(params['red']), int(params['green']), int(params['blue']), int(params['white']), brightness)
     else:
       response_code = 404
       message = 'Not found'
@@ -90,13 +98,14 @@ class LightsHTTPServerHandler(BaseHTTPRequestHandler):
     #self.send_command(command, receive=True)
     return 'Successfully turned lights off'
 
-  def set_color(self, zone, red, green, blue):
-    logger.info('Setting color for zone %d to red %s green %s blue %s', zone, red, green, blue)
+  def set_color(self, zone, red, green, blue, white, brightness):
+    logger.info('Setting color for zone %d to red %s green %d blue %d white %d brightness %d', 
+      zone, red, green, blue, white, brightness)
     command = self.create_command(0x04, 0x01,
       # Only target the one zone
       self.get_zone_mask(zone),
       # Arguments: RGBW + brightness
-      [red, green, blue, 0, 0xff]
+      [red, green, blue, white, brightness]
     )
     self.send_command(command)
     return 'Successfully set color for zone {}'.format(zone)

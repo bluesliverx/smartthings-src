@@ -7,8 +7,8 @@ import uuid
 import netifaces as ni
 from time import sleep
 import logging
+import platform
 
-NETWORK_INTERFACE = 'en0'
 DEVICE_UUID = 'f9d30a08-c55c-45bc-86ff-4905058d5cb2'
 LIGHTS_ENDPOINT = '192.168.1.104'
 LIGHTS_ENDPOINT_PORT = 8899
@@ -16,6 +16,7 @@ LIGHTS_INTERNAL_ADDRESS = [0x11, 0x0e, 0x59]
 
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
+logging.basicConfig()
 
 
 def setup_debugging():
@@ -31,15 +32,20 @@ def setup_debugging():
 
 #setup_debugging()
 
+def get_network_interface():
+    if platform.system()=='Darwin':
+        return 'en0'
+    else:
+        return 'eth0'
 
-def get_network_interface_ip_address(interface='eth0'):
+def get_network_interface_ip_address(interface):
     """
     Get the first IP address of a network interface.
     :param interface: The name of the interface.
     :return: The IP address.
     """
     while True:
-        if NETWORK_INTERFACE not in ni.interfaces():
+        if interface not in ni.interfaces():
             logger.error('Could not find interface %s.' % (interface,))
             exit(1)
         interface = ni.ifaddresses(interface)
@@ -51,7 +57,7 @@ def get_network_interface_ip_address(interface='eth0'):
 
 
 device_uuid = DEVICE_UUID if DEVICE_UUID else uuid.uuid4() 
-local_ip_address = get_network_interface_ip_address(NETWORK_INTERFACE)
+local_ip_address = get_network_interface_ip_address(get_network_interface())
 
 lights_http_server = LightsHTTPServer(1050, LIGHTS_ENDPOINT, LIGHTS_ENDPOINT_PORT, LIGHTS_INTERNAL_ADDRESS)
 lights_http_server.start()
