@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python2.7
 
 from lib.ssdp import SSDPServer
 from lib.upnp_http_server import UPNPHTTPServer
@@ -16,7 +16,10 @@ LIGHTS_INTERNAL_ADDRESS = [0x11, 0x0e, 0x59]
 
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
-logging.basicConfig()
+if platform.system()=='Darwin':
+    logging.basicConfig()
+else:
+    logging.basicConfig(filename='/var/log/wifi-104-server.log')
 
 
 def setup_debugging():
@@ -36,7 +39,7 @@ def get_network_interface():
     if platform.system()=='Darwin':
         return 'en0'
     else:
-        return 'eth0'
+        return 'epair1b'
 
 def get_network_interface_ip_address(interface):
     """
