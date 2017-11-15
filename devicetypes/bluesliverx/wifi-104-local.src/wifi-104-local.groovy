@@ -129,13 +129,13 @@ def refresh() {
 
 def zone1On() {
     log.debug("Zone 1 on")
-    lightsOn()
+    lightsOn(1)
     sendEvent(name:"zone1Switch", value:"on")
 }
 
 def zone1Off() {
     log.debug("Zone 1 off")
-    lightsOff()
+    lightsOff(1)
     sendEvent(name:"zone1Switch", value:"off")
 }
 
@@ -147,14 +147,14 @@ def setZone1Color(value) {
 }
 
 def zone2On() {
-    lightsOn()
+    lightsOn(2)
     log.debug("Zone 2 on")
     sendEvent(name:"zone2Switch", value:"on")
 }
 
 def zone2Off() {
     log.debug("Zone 2 off")
-    lightsOff()
+    lightsOff(2)
     sendEvent(name:"zone2Switch", value:"off")
 }
 
@@ -170,27 +170,15 @@ def setZone2Color(value) {
 //    sendEvent(name: "zone2Color", value: device.zone2Color, displayed: false, isStateChange: true)
 //}
 
-// Return hex-string interpretation of byte array
-public String bytesToHex(byte[] bytes) {
-    final char[] hexArray = "0123456789ABCDEF".toCharArray();
-    char[] hexChars = new char[bytes.length * 2];
-    for ( int j = 0; j < bytes.length; j++ ) {
-        int v = bytes[j] & 0xFF;
-        hexChars[j * 2] = hexArray[v >>> 4];
-        hexChars[j * 2 + 1] = hexArray[v & 0x0F];
-    }
-    return new String(hexChars);
-}
-
 
 // Commands to send to the wifi 104
 
-def lightsOn() {
+def lightsOn(def zone='all') {
     log.info("Turning lights on")
     sendCommand([0x55,0xaa,0x15,0x0f,0x08,0x11,0x0e,0x59,0xff,0xff,0x02,0x03,0x00,0x00,0x00,0xea])
 }
 
-def lightsOff() {
+def lightsOff(def zone='all') {
     log.info("Turning lights off")
     sendCommand([0x55,0xaa,0x17,0x0f,0x08,0x11,0x0e,0x59,0xff,0xff,0x02,0x00,0x00,0x00,0x00,0xea])
 }
