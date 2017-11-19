@@ -35,15 +35,15 @@ def get_frame_index():
 def message_response(message):
     return jsonify({'message':message})
 
-@app.route('/lights/zones/<zone>/on', methods=['PUT'])
+@app.route('/zones/<zone>/on', methods=['PUT'])
 def zone_on(zone):
     return message_response(turn_lights_on(zone))
 
-@app.route('/lights/zones/<zone>/off', methods=['PUT'])
+@app.route('/zones/<zone>/off', methods=['PUT'])
 def zone_off(zone):
     return message_response(turn_lights_off(zone))
 
-@app.route('/lights/zones/<zone>/color', methods=['PUT'])
+@app.route('/zones/<zone>/color', methods=['PUT'])
 def zone_color(zone):
     if 'red' not in request.args or 'green' not in request.args or 'blue' not in request.args or 'white' not in request.args:
         return app.response_class(

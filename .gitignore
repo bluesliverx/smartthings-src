@@ -3,3 +3,4 @@ target
 out
 apps-env
 .env
+.DS_Store
