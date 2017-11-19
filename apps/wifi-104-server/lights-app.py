@@ -18,7 +18,7 @@ logger.setLevel(logging.DEBUG)
 if platform.system()=='Darwin':
     logging.basicConfig()
 else:
-    logging.basicConfig(filename='/var/log/wifi-104-server.log')
+    logging.basicConfig(filename='/var/log/uwsgi/wifi-104-server.log')
 
 frame_index = 0
 def get_frame_index():
