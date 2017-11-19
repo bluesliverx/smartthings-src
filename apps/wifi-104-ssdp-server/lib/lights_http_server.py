@@ -1,4 +1,4 @@
-from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
+from wsgiref.simple_server import WSGIServer, WSGIRequestHandler
 from urlparse import urlparse
 import threading
 import logging
@@ -10,7 +10,7 @@ BUFFER_SIZE = 1024
 
 logger = logging.getLogger('lights')
 
-class LightsHTTPServerHandler(BaseHTTPRequestHandler):
+class LightsHTTPServerHandler(WSGIRequestHandler):
   """
   A HTTP handler that routes commands to lights.
   """
@@ -46,8 +46,14 @@ class LightsHTTPServerHandler(BaseHTTPRequestHandler):
         # Default to full brightness
         brightness = 0xff
         if 'brightness' in params:
-          brightness = int(params['brightness'])
-        message = self.set_color(1, int(params['red']), int(params['green']), int(params['blue']), int(params['white']), brightness)
+          brightness = self.convert_color(params['brightness'])
+        message = self.set_color(1,
+          self.convert_color(params['red']),
+          self.convert_color(params['green']),
+          self.convert_color(params['blue']),
+          self.convert_color(params['white']),
+          brightness
+        )
     elif self.path.startswith('/lights/zones/2/on'):
       message = self.turn_lights_on(2)
     elif self.path.startswith('/lights/zones/2/off'):
@@ -60,8 +66,14 @@ class LightsHTTPServerHandler(BaseHTTPRequestHandler):
         # Default to full brightness
         brightness = 0xff
         if 'brightness' in params:
-          brightness = int(params['brightness'])
-        message = self.set_color(2, int(params['red']), int(params['green']), int(params['blue']), int(params['white']), brightness)
+          brightness = self.convert_color(params['brightness'])
+        message = self.set_color(2,
+          self.convert_color(params['red']),
+          self.convert_color(params['green']),
+          self.convert_color(params['blue']),
+          self.convert_color(params['white']),
+          brightness
+        )
     else:
       response_code = 404
       message = 'Not found'
@@ -69,6 +81,11 @@ class LightsHTTPServerHandler(BaseHTTPRequestHandler):
     self.send_header('Content-type', 'application/json')
     self.end_headers()
     self.wfile.write(json.dumps({'message':message}).encode())
+
+  def convert_color(self, value):
+    if not value or value=='null':
+      return 0
+    return int(value)
 
   def get_query_params(self):
     query = urlparse(self.path).query
@@ -171,7 +188,7 @@ class LightsHTTPServerHandler(BaseHTTPRequestHandler):
     s.close()
     
 
-class LightsHTTPServerBase(HTTPServer):
+class LightsHTTPServerBase(WSGIServer):
   """
   A simple HTTP server that handles LTech WiFi 104 light controller commands.
   """
