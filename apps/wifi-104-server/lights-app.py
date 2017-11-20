@@ -37,11 +37,11 @@ def message_response(message):
 
 @app.route('/zones/<zone>/on', methods=['PUT'])
 def zone_on(zone):
-    return message_response(turn_lights_on(zone))
+    return message_response(switch_lights(zone, True))
 
 @app.route('/zones/<zone>/off', methods=['PUT'])
 def zone_off(zone):
-    return message_response(turn_lights_off(zone))
+    return message_response(switch_lights(zone, False))
 
 @app.route('/zones/<zone>/color', methods=['PUT'])
 def zone_color(zone):
@@ -69,27 +69,15 @@ def convert_color(value):
         return 0
     return int(value)
 
-def turn_lights_on(zone=None):
+def switch_lights(zone=None, on=True):
     logger.info('Turning lights on for zone %s', zone)
     all_zones = get_zone_mask(zone)
-    zone_status = get_zone_status(True, True)
+    zone_status = get_zone_status(on, on)
     # Send command twice since this is what the java app does - maybe something with frame index incrementing?
-    command = create_command(0x0f, 0x08, all_zones, zone_status)
-    send_command(command)
-    send_command(command)
+    send_command(create_command(0x0f, 0x08, all_zones, zone_status))
+    send_command(create_command(0x0f, 0x08, all_zones, zone_status))
     #send_command(command, receive=True)
-    return 'Successfully turned lights on'
-
-def turn_lights_off(zone=None):
-    logger.info('Turning lights off for zone %s', zone)
-    all_zones = get_zone_mask(zone)
-    zone_status = get_zone_status(False, False)
-    # Send command twice since this is what the java app does - maybe something with frame index incrementing?
-    command = create_command(0x0f, 0x08, all_zones, zone_status)
-    send_command(command)
-    send_command(command)
-    #send_command(command, receive=True)
-    return 'Successfully turned lights off'
+    return 'Successfully turned lights {}'.format('on' if on else 'off')
 
 def set_color(zone, red, green, blue, white, brightness):
     logger.info('Setting color for zone %d to red %s green %d blue %d white %d brightness %d', 
