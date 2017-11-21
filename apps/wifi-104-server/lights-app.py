@@ -1,7 +1,7 @@
 #!/usr/bin/env python2.7
 
 from flask import Flask, request, abort, jsonify
-#from logging.handlers import RotatingFileHandler
+from timeout_decorator import timeout
 import logging
 import socket
 import platform
@@ -12,6 +12,7 @@ app = Flask(__name__)
 ENDPOINT = '192.168.1.104'
 ENDPOINT_PORT = 8899
 INTERNAL_ADDRESS = [0x11, 0x0e, 0x59]
+BUFFER_SIZE = 1024
 
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
@@ -75,8 +76,7 @@ def switch_lights(zone=None, on=True):
     zone_status = get_zone_status(on, on)
     # Send command twice since this is what the java app does - maybe something with frame index incrementing?
     send_command(create_command(0x0f, 0x08, all_zones, zone_status))
-    send_command(create_command(0x0f, 0x08, all_zones, zone_status))
-    #send_command(command, receive=True)
+    send_command(create_command(0x0f, 0x08, all_zones, zone_status), receive=True)
     return 'Successfully turned lights {}'.format('on' if on else 'off')
 
 def set_color(zone, red, green, blue, white, brightness):
@@ -88,7 +88,7 @@ def set_color(zone, red, green, blue, white, brightness):
         # Arguments: RGBW + brightness
         [red, green, blue, white, brightness]
     )
-    send_command(command)
+    send_command(command, receive=True)
     return 'Successfully set color for zone {}'.format(zone)
 
 def get_zone_mask(zone=None):
@@ -142,22 +142,31 @@ def create_command(command1, command2, zones, args=[]):
 def send_command(command, receive=False):
     global ENDPOINT
     global ENDPOINT_PORT
-    global BUFFER_SIZE
     command_bytes = bytearray(command)
     logger.debug('Sending command to endpoint %s:%d - %s', ENDPOINT, ENDPOINT_PORT, command)
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.connect((ENDPOINT, ENDPOINT_PORT))
-    s.send(command_bytes)
-    if receive:
-        logger.debug('Waiting for response from endpoint')
-        data = s.recv(BUFFER_SIZE)
-        logger.debug('Received %s from endpoint', data)
-    s.close()
 
+    received = False
+    tries = 3
+    while not received and tries > 0:
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.connect((ENDPOINT, ENDPOINT_PORT))
+        s.send(command_bytes)
+        if receive:
+            try:
+                receive_response(s)
+                received = True
+            except:
+                logger.warn('Timed out while waiting for a response, resending command {} more times'.format(tries))
+                tries -= 1
+        else:
+            # Mark it as received if we're not waiting for a response
+            received = True
+        s.close()
+    
+@timeout(5)
+def receive_response(s):
+    global BUFFER_SIZE
+    logger.debug('Waiting for response from endpoint')
+    data = s.recv(BUFFER_SIZE)
+    logger.debug('Received %s from endpoint', list(data))
 
-# If logging does not work in prod with uwsgi, we can try this
-#if __name__ == '__main__':
-#    handler = RotatingFileHandler('foo.log', maxBytes=10000, backupCount=1)
-#    handler.setLevel(logging.INFO)
-#    app.logger.addHandler(handler)
-#    app.run()
