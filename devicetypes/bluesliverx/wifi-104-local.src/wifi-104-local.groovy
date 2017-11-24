@@ -68,7 +68,7 @@ metadata {
             state "on", label:'On', action:"allZonesOff", icon:"st.Seasonal Winter.seasonal-winter-011", backgroundColor:"#00A0DC"
             state "off", label:'Off', action:"allZonesOn", icon:"st.Seasonal Winter.seasonal-winter-011", backgroundColor:"#ffffff"
         }
-        standardTile("allZones", "allZonesSwitch", height: 1, width: 2) {
+        standardTile("allZones", "allZonesSwitch", width: 6, height: 4) {
             state "on", label:'On', action:"allZonesOff", icon:"st.Seasonal Winter.seasonal-winter-011", backgroundColor:"#00A0DC", nextState:"turningOff"
             state "off", label:'Off', action:"allZonesOn", icon:"st.Seasonal Winter.seasonal-winter-011", backgroundColor:"#ffffff", nextState:"turningOn"
             state "turningOn", label:'Turning On', action:"allZonesOff", icon:"st.Seasonal Winter.seasonal-winter-011", backgroundColor:"#00A0DC", nextState:"turningOff"
@@ -216,11 +216,11 @@ def setColor(int zone, value) {
         log.info "setting color with hex"
         def c = value.hex.findAll(/[0-9a-fA-F]{2}/).collect { Integer.parseInt(it, 16) }
         sendCommand(zone, 'color', [
-            red:c[0],
-            green:c[1],
-            blue:c[2],
-            white:0,
-            brightness:255,
+                red:c[0],
+                green:c[1],
+                blue:c[2],
+                white:0,
+                brightness:255,
         ])
     } else {
         log.info "setting color with hue & saturation"
@@ -247,11 +247,11 @@ private void sendCommand(def zone, def action, def queryParams=[:]) {
     log.info("Sending zone ${zone} command ${action} with params ${queryParams} to ${settings.host}")
 
     sendHubCommand(new physicalgraph.device.HubAction(
-        method: "PUT",
-        path: "/lights/zones/${zone}/${action}",
-        headers: [
-            HOST: settings.host
-        ],
-        query: queryParams
+            method: "PUT",
+            path: "/lights/zones/${zone}/${action}",
+            headers: [
+                    HOST: settings.host
+            ],
+            query: queryParams
     ))
 }
