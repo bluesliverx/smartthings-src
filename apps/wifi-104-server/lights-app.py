@@ -5,11 +5,12 @@ from timeout_decorator import timeout
 import logging
 import socket
 import platform
+import os
 
 # App for uwsgi
 app = Flask(__name__)
 
-ENDPOINT = '192.168.1.104'
+ENDPOINT = os.getenv('ENDPOINT', '192.168.1.104')
 ENDPOINT_PORT = 8899
 INTERNAL_ADDRESS = [0x11, 0x0e, 0x59]
 BUFFER_SIZE = 1024
@@ -62,6 +63,22 @@ def zone_color(zone):
         convert_color(request.args.get('brightness', 0xff)),
     )
     return message_response(message)
+
+@app.route('/zones/all/status')
+def status():
+    logger.info('Retrieving status')
+    # While 1 arg is expected, it is never set in the app, so set it explicitly to 0
+    response = send_command(create_command(0x0f, 0x09, get_zone_mask('all'), [0x00]), receive=True)
+    zone_statuses1 = int(response[11])
+    zone_statuses2 = int(response[12]) >> 4
+    logger.info('Zone statuses are {} and {}'.format(zone_statuses1, zone_statuses2))
+    statuses = {}
+    for zone in range(0, 8):
+        statuses[zone+1] = bool((1 << zone) & zone_statuses1)
+    for zone in range(8, 12):
+        statuses[zone+1] = bool((1 << (zone - 8)) & zone_statuses2)
+    
+    return jsonify({'zones':statuses})
     
 def convert_color(value):
     if type(value) is int:
@@ -128,6 +145,9 @@ def create_command(command1, command2, zones, args=[]):
     elif command2==1:
         # RGBW + brightness
         num_args = 5
+    elif command2==9:
+        # Query zone status
+        num_args = 1
     ret.append(num_args)
     # Add args and make sure they match
     if len(args)!=num_args:
@@ -143,30 +163,41 @@ def send_command(command, receive=False):
     global ENDPOINT
     global ENDPOINT_PORT
     command_bytes = bytearray(command)
-    logger.debug('Sending command to endpoint %s:%d - %s', ENDPOINT, ENDPOINT_PORT, command)
+    frame_index = command[2]
+    logger.debug('Sending command %d to endpoint %s:%d - %s', frame_index, ENDPOINT, ENDPOINT_PORT, command)
 
-    received = False
+    response = None
     tries = 3
-    while not received and tries > 0:
+    while not response and tries > 0:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.connect((ENDPOINT, ENDPOINT_PORT))
-        s.send(command_bytes)
-        if receive:
+        try:
+            s.connect((ENDPOINT, ENDPOINT_PORT))
+            s.send(command_bytes)
+            if not receive:
+                return None
             try:
-                receive_response(s)
-                received = True
-            except:
+                response = receive_response(s, frame_index)
+                # Do not return if there is no response (the frame index did not match)
+                if response:
+                    return response
+            except Exception as e:
+                logger.warn(str(e))
                 logger.warn('Timed out while waiting for a response, resending command {} more times'.format(tries))
-                tries -= 1
-        else:
-            # Mark it as received if we're not waiting for a response
-            received = True
-        s.close()
+            tries -= 1
+        finally:
+            s.close()
+    raise Exception('No response received from the controller')
     
 @timeout(5)
-def receive_response(s):
+def receive_response(s, expected_frame_index):
     global BUFFER_SIZE
     logger.debug('Waiting for response from endpoint')
     data = s.recv(BUFFER_SIZE)
-    logger.debug('Received %s from endpoint', list(data))
+    byte_data = bytearray(data)
+    frame_index = int(byte_data[2])
+    logger.debug('Received %s from endpoint (frame index %d)', list(data), frame_index)
+    if frame_index!=expected_frame_index:
+        logger.debug('Frame index received ({}) does not match expected ({}), ignoring'.format(frame_index, expected_frame_index))
+        return None
+    return byte_data
 
