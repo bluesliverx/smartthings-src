@@ -167,7 +167,7 @@ def send_command(command, receive=False, validate_index=False):
     logger.debug('Sending command %d to endpoint %s:%d - %s', frame_index, ENDPOINT, ENDPOINT_PORT, command)
 
     response = None
-    tries = 3
+    tries = 5
     while not response and tries > 0:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         try:
@@ -192,12 +192,14 @@ def send_command(command, receive=False, validate_index=False):
 def receive_response(s, validate_index, expected_frame_index):
     global BUFFER_SIZE
     logger.debug('Waiting for response from endpoint')
-    data = s.recv(BUFFER_SIZE)
-    byte_data = bytearray(data)
-    frame_index = int(byte_data[2])
-    logger.debug('Received %s from endpoint (frame index %d)', list(data), frame_index)
-    if validate_index and frame_index!=expected_frame_index:
-        logger.debug('Frame index received ({}) does not match expected ({}), ignoring'.format(frame_index, expected_frame_index))
-        return None
+    byte_data = None
+    while not byte_data:
+        data = s.recv(BUFFER_SIZE)
+        byte_data = bytearray(data)
+        frame_index = int(byte_data[2])
+        logger.debug('Received %s from endpoint (frame index %d)', list(data), frame_index)
+        if validate_index and frame_index!=expected_frame_index:
+            logger.debug('Frame index received ({}) does not match expected ({}), ignoring'.format(frame_index, expected_frame_index))
+            byte_data = None
     return byte_data
 
