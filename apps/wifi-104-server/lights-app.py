@@ -188,7 +188,7 @@ def send_command(command, receive=False, validate_index=False):
             s.close()
     raise Exception('No response received from the controller')
     
-@timeout(5)
+@timeout(2)
 def receive_response(s, validate_index, expected_frame_index):
     global BUFFER_SIZE
     logger.debug('Waiting for response from endpoint')
