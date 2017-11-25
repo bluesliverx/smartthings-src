@@ -68,7 +68,7 @@ def zone_color(zone):
 def status():
     logger.info('Retrieving status')
     # While 1 arg is expected, it is never set in the app, so set it explicitly to 0
-    response = send_command(create_command(0x0f, 0x09, get_zone_mask('all'), [0x00]), receive=True)
+    response = send_command(create_command(0x0f, 0x09, get_zone_mask('all'), [0x00]), receive=True, validate_index=True)
     zone_statuses1 = int(response[11])
     zone_statuses2 = int(response[12]) >> 4
     logger.info('Zone statuses are {} and {}'.format(zone_statuses1, zone_statuses2))
@@ -159,7 +159,7 @@ def create_command(command1, command2, zones, args=[]):
     ret.extend([0x00, 0x00, 0xea])
     return ret
 
-def send_command(command, receive=False):
+def send_command(command, receive=False, validate_index=False):
     global ENDPOINT
     global ENDPOINT_PORT
     command_bytes = bytearray(command)
@@ -176,7 +176,7 @@ def send_command(command, receive=False):
             if not receive:
                 return None
             try:
-                response = receive_response(s, frame_index)
+                response = receive_response(s, validate_index, frame_index)
                 # Do not return if there is no response (the frame index did not match)
                 if response:
                     return response
@@ -189,14 +189,14 @@ def send_command(command, receive=False):
     raise Exception('No response received from the controller')
     
 @timeout(5)
-def receive_response(s, expected_frame_index):
+def receive_response(s, validate_index, expected_frame_index):
     global BUFFER_SIZE
     logger.debug('Waiting for response from endpoint')
     data = s.recv(BUFFER_SIZE)
     byte_data = bytearray(data)
     frame_index = int(byte_data[2])
     logger.debug('Received %s from endpoint (frame index %d)', list(data), frame_index)
-    if frame_index!=expected_frame_index:
+    if validate_index and frame_index!=expected_frame_index:
         logger.debug('Frame index received ({}) does not match expected ({}), ignoring'.format(frame_index, expected_frame_index))
         return None
     return byte_data
