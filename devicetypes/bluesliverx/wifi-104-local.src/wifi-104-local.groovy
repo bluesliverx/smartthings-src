@@ -13,14 +13,39 @@
  *	for the specific language governing permissions and limitations under the License.
  *
  */
+import groovy.transform.Field
 
 def version() {
     return "1.0\n© 2017 Brian Saville"
 }
 
+// The maximum number of zones supported
+def MAX_ZONES = 12
+// Number between 1 and MAX_ZONES (inclusive)
+// This MUST match the value configured in the device, since settings are not available when creating/managing tiles
+def NUM_ZONES = 2
+
+@Field def red = 'ff0000'
+@Field def green = '00ff00'
+@Field def blue = '0000ff'
+@Field def orange = 'ffff00'
+@Field def purple = 'ff00ff'
+@Field def COLORS = [
+        'Fall':[orange, green],
+        'Christmas': [red, green],
+        'Halloween': ['ff8800', purple],
+//        'Easter': TODO
+//        'Valentines': TODO
+        'JulyFourth': [red, blue],
+        'Red':[red, red],
+        'Green':[green, green],
+        'Blue':[blue, blue],
+]
+
 preferences {
     input("mac", "string", title: "MAC Address (no colons)", required: true, displayDuringSetup: true)
     input("host", "string", title: "IP:Port", required: true, displayDuringSetup: true)
+    input("zones", "number", range:"1..${MAX_ZONES}", title: "Number of Zones (1-${MAX_ZONES})", required: true, displayDuringSetup: true)
     input(title:"", description: "Version: ${version()}", type: "paragraph", element: "paragraph")
 }
 
@@ -29,34 +54,32 @@ metadata {
         capability "Color Control"
         capability "Switch"
         capability "Refresh"
-
-//        attribute "energy_str", "string"
-//        attribute "energy_yesterday", "string"
-//        attribute "energy_last7days", "string"
-//        attribute "energy_life", "string"
-//        attribute "power_details", "string"
-//        attribute "efficiency", "string"
-//        attribute "efficiency_yesterday", "string"
-//        attribute "efficiency_last7days", "string"
+        capability "Polling"
 
         attribute("allZonesSwitch", "enum", ["on", "off", "turningOff", "turningOn"])
-        attribute("zone1Switch", "enum", ["on", "off", "turningOff", "turningOn"])
-        attribute("zone2Switch", "enum", ["on", "off", "turningOff", "turningOn"])
-        attribute("zone1Color", "string")
-        attribute("zone1Level", "number")
-        attribute("zone2Color", "string")
-        attribute("zone2Level", "number")
+        (1..MAX_ZONES).each { int zone ->
+            attribute("zone${zone}Switch", "enum", ["on", "off", "turningOff", "turningOn"])
+            attribute("zone${zone}Color", "string")
+            attribute("zone${zone}Level", "number")
+        }
 
-        command "allZonesOn"
-        command "allZonesOff"
-        command "zone1On"
-        command "zone2On"
-        command "zone1Off"
-        command "zone2Off"
-        command "lightsOn"
-        command "lightsOff"
-        command "setZone1Color"
-        command "setZone2Color"
+        (1..MAX_ZONES).each { int zone ->
+            command "zone${zone}On"
+            command "zone${zone}Off"
+            command "setZone${zone}Color"
+        }
+
+        // Color combinations
+        COLORS.each { String name, def colors ->
+            command "color${name}"
+        }
+//        command "colorFall"
+//        command "colorChristmasGreen"
+//        command "colorChristmasBlue"
+//        command "colorHalloween"
+//        command "colorEaster"
+//        command "colorValentines"
+//        command "colorJulyFourth"
     }
 
     simulator {
@@ -64,158 +87,275 @@ metadata {
     }
 
     tiles(scale: 2) {
-        valueTile("allZonesValue", "allZonesSwitch") {
-            state "on", label:'On', action:"allZonesOff", icon:"st.Seasonal Winter.seasonal-winter-011", backgroundColor:"#00A0DC"
-            state "off", label:'Off', action:"allZonesOn", icon:"st.Seasonal Winter.seasonal-winter-011", backgroundColor:"#ffffff"
+        standardTile("allZonesSwitchControl", "allZonesSwitch", width: 6, height: 4) {
+            state "on", label:'On', action:"off", icon:"st.Seasonal Winter.seasonal-winter-011", backgroundColor:"#00A0DC", nextState:"turningOff"
+            state "off", label:'Off', action:"on", icon:"st.Seasonal Winter.seasonal-winter-011", backgroundColor:"#ffffff", nextState:"turningOn"
+            state "turningOn", label:'Turning On', action:"on", icon:"st.Seasonal Winter.seasonal-winter-011", backgroundColor:"#00A0DC", nextState:"turningOn"
+            state "turningOff", label:'Turning Off', action:"off", icon:"st.Seasonal Winter.seasonal-winter-011", backgroundColor:"#ffffff", nextState:"turningOff"
         }
-        standardTile("allZones", "allZonesSwitch", width: 6, height: 4) {
-            state "on", label:'On', action:"allZonesOff", icon:"st.Seasonal Winter.seasonal-winter-011", backgroundColor:"#00A0DC", nextState:"turningOff"
-            state "off", label:'Off', action:"allZonesOn", icon:"st.Seasonal Winter.seasonal-winter-011", backgroundColor:"#ffffff", nextState:"turningOn"
-            state "turningOn", label:'Turning On', action:"allZonesOff", icon:"st.Seasonal Winter.seasonal-winter-011", backgroundColor:"#00A0DC", nextState:"turningOff"
-            state "turningOff", label:'Turning Off', action:"allZonesOn", icon:"st.Seasonal Winter.seasonal-winter-011", backgroundColor:"#ffffff", nextState:"turningOn"
-        }
-        multiAttributeTile(name:"zone1", type: "lighting", width: 6, height: 4) {
-            tileAttribute ("zone1Switch", key: "PRIMARY_CONTROL") {
-                attributeState "on", label:'Zone 1 On', action:"zone1Off", icon:"st.Seasonal Winter.seasonal-winter-011", backgroundColor:"#00A0DC", nextState:"turningOff"
-                attributeState "off", label:'Zone 1 Off', action:"zone1On", icon:"st.Seasonal Winter.seasonal-winter-011", backgroundColor:"#ffffff", nextState:"turningOn"
-                attributeState "turningOn", label:'Zone 1 Turning On', action:"zone1Off", icon:"st.Seasonal Winter.seasonal-winter-011", backgroundColor:"#00A0DC", nextState:"turningOff"
-                attributeState "turningOff", label:'Zone 1 Turning Off', action:"zone1On", icon:"st.Seasonal Winter.seasonal-winter-011", backgroundColor:"#ffffff", nextState:"turningOn"
-            }
-            tileAttribute ("zone1Color", key: "COLOR_CONTROL") {
-                attributeState "color", action:"setZone1Color"
-            }
-        }
-        multiAttributeTile(name:"zone2", width: 6, height: 4) {
-            tileAttribute ("zone2Switch", key: "PRIMARY_CONTROL") {
-                attributeState "on", label:'Zone 2 On', action:"zone2Off", icon:"st.Seasonal Winter.seasonal-winter-011", backgroundColor:"#00A0DC", nextState:"turningOff"
-                attributeState "off", label:'Zone 2 Off', action:"zone2On", icon:"st.Seasonal Winter.seasonal-winter-011", backgroundColor:"#ffffff", nextState:"turningOn"
-                attributeState "turningOn", label:'Zone 2 Turning On', action:"zone2Off", icon:"st.Seasonal Winter.seasonal-winter-011", backgroundColor:"#00A0DC", nextState:"turningOff"
-                attributeState "turningOff", label:'Zone 2 Turning Off', action:"zone2On", icon:"st.Seasonal Winter.seasonal-winter-011", backgroundColor:"#ffffff", nextState:"turningOn"
-            }
-            tileAttribute ("zone2Color", key: "COLOR_CONTROL") {
-                attributeState "color", action:"setZone2Color"
+
+        (1..MAX_ZONES).each { int zone ->
+            standardTile("zone${zone}SwitchControl".toString(), "zone${zone}Switch".toString(), width: 3, height: 3, decoration: 'flat') {
+                state "on", label: "Zone ${zone}", action: "zone${zone}Off", icon: "st.Seasonal Winter.seasonal-winter-011", backgroundColor: "#00A0DC", nextState: "turningOff"
+                state "off", label: "Zone ${zone}", action: "zone${zone}On", icon: "st.Seasonal Winter.seasonal-winter-011", backgroundColor: "#ffffff", nextState: "turningOn"
+                state "turningOn", label: "Zone ${zone}", action: "zone${zone}On", icon: "st.Seasonal Winter.seasonal-winter-011", backgroundColor: "#00A0DC", nextState: "turningOn"
+                state "turningOff", label: "Zone ${zone}", action: "zone${zone}Off", icon: "st.Seasonal Winter.seasonal-winter-011", backgroundColor: "#ffffff", nextState: "turningOff"
             }
         }
 
-        main "allZonesValue"
-        details(["allZones", "zone1", "zone2", "refresh"])
+        (1..MAX_ZONES).each { int zone ->
+            controlTile("zone${zone}ColorSelector".toString(), "zone${zone}Color".toString(), "color", height: 3, width: 3, inactiveLabel: false) {
+                state "color", action: "setZone${zone}Color"
+            }
+        }
+
+        standardTile("refresh", "device.refresh", inactiveLabel: false, decoration: "flat", width: 6, height: 2) {
+            state "default", action:"refresh.refresh", icon:"st.secondary.refresh"
+        }
+
+        standardTile("colorsLabel", "null", decoration: "flat", width: 6, height: 2) {
+            state "default", label:'Colors', defaultState: true
+        }
+        COLORS.each { String name, def colors ->
+            standardTile("setColor${name}".toString(), "null", width: 2, height: 2, decoration: "flat") {
+                state "empty", label: name.replaceAll('([a-z])([A-Z])', '$1 $2'), action: "color${name}", defaultState: true
+            }
+        }
+
+
+        main "allZonesSwitchControl"
+
+        // Build dynamic details list that only includes the number of zones it should
+        def detailsItems = ["allZonesSwitchControl"]
+        for (int zone=1; zone <= NUM_ZONES; zone+=2) {
+            // Handle odd number of zones correctly
+            detailsItems.add("zone${zone}SwitchControl")
+            if ((zone + 1) <= NUM_ZONES) {
+                detailsItems.add("zone${zone + 1}SwitchControl")
+            }
+            detailsItems.add("zone${zone}ColorSelector")
+            if ((zone + 1) <= NUM_ZONES) {
+                detailsItems.add("zone${zone + 1}ColorSelector")
+            }
+        }
+
+        detailsItems.add("refresh")
+        detailsItems.add("colorsLabel")
+
+        COLORS.each { String name, def colors ->
+            detailsItems.add("setColor${name}")
+        }
+        details(detailsItems)
     }
 }
 
-def updated() {
-    log.info("Updated")
-//    if (!state.updatedLastRanAt || now() >= state.updatedLastRanAt + 2000) {
-//        state.updatedLastRanAt = now()
-//        log.trace("$device.displayName - updated() called with settings: ${settings.inspect()}")
-//        state.remove('api')
-//        state.remove('installationDate')
-//        state.maxPower = settings.confNumInverters * settings.confInverterSize
-//        // Notify health check about this device with timeout interval equal to 5 failed update requests
-//        // (add 30 seconds so we don't collide with the 5th request in case that succeeds)
-//        def healthCheckInterval = 5 * settings.pollingInterval.toInteger() * 60 + 30
-//        sendEvent(name: "checkInterval", value: healthCheckInterval, data: [protocol: "lan", hubHardwareId: device.hub.hardwareID], displayed: false)
-//        log.trace("$device.displayName - setting checkInterval for device health check to ${healthCheckInterval} seconds")
-//        pullData()
-//    } else {
-//        log.trace("$device.displayName - updated() ran within the last 2 seconds - skipping")
-//    }
-}
-
-private def updateDNI() {
-    if (!state.dni || state.dni != device.deviceNetworkId || (settings.mac && settings.mac != device.deviceNetworkId)) {
-        log.debug("Setting DNI to ${settings.mac}")
-        device.setDeviceNetworkId(settings.mac)
-        state.dni = device.deviceNetworkId
-    }
-}
-
-def parse(String description) {
+def parse(description) {
     log.info("Parse ${description}")
 }
 
 def refresh() {
-    log.debug("Refresh")
+    log.debug("Refreshing data from server")
+    sendHubCommand(getCommand('all', 'status', [:], 'GET'))
 }
 
-def allZonesOn() {
+def poll() {
+    log.debug("Poll called")
+    refresh()
+}
+
+def on() {
     log.debug("All zones on")
-    lightsOn()
-    sendEvent(name:"zone1Switch", value:"on")
-    sendEvent(name:"zone2Switch", value:"on")
-    sendEvent(name:"allZonesSwitch", value:"on")
+    return lightsOn()
 }
 
-def allZonesOff() {
+def off() {
     log.debug("All zones off")
-    lightsOff()
-    sendEvent(name:"zone1Switch", value:"off")
-    sendEvent(name:"zone2Switch", value:"off")
-    sendEvent(name:"allZonesSwitch", value:"off")
+    return lightsOff()
 }
+
 
 def zone1On() {
-    log.debug("Zone 1 on")
-    lightsOn(1)
-    sendEvent(name:"zone1Switch", value:"on")
-    sendEvent(name:"allZonesSwitch", value:"on")
+    return lightsOn(1)
 }
-
 def zone1Off() {
-    log.debug("Zone 1 off")
-    lightsOff(1)
-    sendEvent(name:"zone1Switch", value:"off")
-    sendEvent(name:"allZonesSwitch", value:"off")
+    return lightsOff(1)
 }
-
 def setZone1Color(value) {
-    log.debug("set zone 1 color to ${value}")
-    setColor(1, value)
-    sendEvent(name: "zone1Color", value: value.hex, data: value)
+    return setColor(1, value)
 }
 
 def zone2On() {
-    lightsOn(2)
-    log.debug("Zone 2 on")
-    sendEvent(name:"zone2Switch", value:"on")
+    return lightsOn(2)
 }
-
 def zone2Off() {
-    log.debug("Zone 2 off")
-    lightsOff(2)
-    sendEvent(name:"zone2Switch", value:"off")
+    return lightsOff(2)
 }
-
 def setZone2Color(value) {
-    log.debug("set zone 2 color to ${value}")
-    setColor(2, value)
-    sendEvent(name: "zone2Color", value: value.hex, data: value)
+    return setColor(2, value)
 }
 
-//def toggleOffColorTiles() {
-//    sendEvent(name: "zone1Color", value: device.zone1Color, displayed: false, isStateChange: true)
-//    sendEvent(name: "zone2Color", value: device.zone2Color, displayed: false, isStateChange: true)
-//}
+def zone3On() {
+    return lightsOn(3)
+}
+def zone3Off() {
+    return lightsOff(3)
+}
+def setZone3Color(value) {
+    return setColor(3, value)
+}
+
+def zone4On() {
+    return lightsOn(4)
+}
+def zone4Off() {
+    return lightsOff(4)
+}
+def setZone4Color(value) {
+    return setColor(4, value)
+}
+
+def zone5On() {
+    return lightsOn(5)
+}
+def zone5Off() {
+    return lightsOff(5)
+}
+def setZone5Color(value) {
+    return setColor(5, value)
+}
+
+def zone6On() {
+    return lightsOn(6)
+}
+def zone6Off() {
+    return lightsOff(6)
+}
+def setZone6Color(value) {
+    return setColor(6, value)
+}
+
+def zone7On() {
+    return lightsOn(7)
+}
+def zone7Off() {
+    return lightsOff(7)
+}
+def setZone7Color(value) {
+    return setColor(7, value)
+}
+
+def zone8On() {
+    return lightsOn(8)
+}
+def zone8Off() {
+    return lightsOff(8)
+}
+def setZone8Color(value) {
+    return setColor(8, value)
+}
+
+def zone9On() {
+    return lightsOn(9)
+}
+def zone9Off() {
+    return lightsOff(9)
+}
+def setZone9Color(value) {
+    return setColor(9, value)
+}
+
+def zone10On() {
+    return lightsOn(10)
+}
+def zone10Off() {
+    return lightsOff(10)
+}
+def setZone10Color(value) {
+    return setColor(10, value)
+}
+
+def zone11On() {
+    return lightsOn(11)
+}
+def zone11Off() {
+    return lightsOff(11)
+}
+def setZone11Color(value) {
+    return setColor(11, value)
+}
+
+def zone12On() {
+    return lightsOn(12)
+}
+def zone12Off() {
+    return lightsOff(12)
+}
+def setZone12Color(value) {
+    return setColor(12, value)
+}
+
+
+// Color combinations
+
+/**
+ * Set colors for zones, in the form of 0011ff, where 00 is the red color, 11 is the green color,
+ * and ff is the red color.
+ * @param colors A color string for each zone
+ */
+def setColorsForZones(String name) {
+    def colors = COLORS[name]
+    log.info("Setting colors to ${name}, zones: ${colors}")
+    return (1..colors.size()).collect { int zone ->
+        return sendHubCommand(setColor(zone, [hex:"#${colors[zone-1]}"]))
+    }
+}
+def colorRed() {
+    return setColorsForZones('Red')
+}
+def colorGreen() {
+    return setColorsForZones('Green')
+}
+def colorBlue() {
+    return setColorsForZones('Blue')
+}
+def colorFall() {
+    return setColorsForZones('Fall')
+}
+def colorChristmas() {
+    return setColorsForZones('Christmas')
+}
+def colorHalloween() {
+    return setColorsForZones('Halloween')
+}
+def colorEaster() {
+    return setColorsForZones('Easter')
+}
+def colorValentines() {
+    return setColorsForZones('Valentines')
+}
+def colorJulyFourth() {
+    return setColorsForZones('JulyFourth')
+}
 
 
 // Commands to send to the wifi 104
 
 def lightsOn(def zone='all') {
-    log.info("Turning lights on")
-    sendCommand(zone, 'on')
+    log.info("Turning lights on for zone ${zone}")
+    return getCommand(zone, 'on')
 }
 
 def lightsOff(def zone='all') {
-    log.info("Turning lights off")
-    sendCommand(zone, 'off')
+    log.info("Turning lights off for zone ${zone}")
+    return getCommand(zone, 'off')
 }
 
 def setColor(int zone, value) {
-    log.info "setColor: ${value}"
-
     if (value.hex) {
-        log.info "setting color with hex"
+        log.info "Setting color for zone ${zone} to ${value}"
+        sendEvent(name: "zone${zone}Color".toString(), value: value.hex, data: value)
         def c = value.hex.findAll(/[0-9a-fA-F]{2}/).collect { Integer.parseInt(it, 16) }
-        sendCommand(zone, 'color', [
+        return getCommand(zone, 'color', [
                 red:c[0],
                 green:c[1],
                 blue:c[2],
@@ -223,8 +363,7 @@ def setColor(int zone, value) {
                 brightness:255,
         ])
     } else {
-        log.info "setting color with hue & saturation"
-        log.error "Can't do this yet, still needs implementing"
+        log.error "Setting color with hue and saturation yet is not yet implemented"
 //        def hue = value.hue ?: device.currentValue("hue")
 //        def saturation = value.saturation ?: device.currentValue("saturation")
 //        if (hue == null) hue = 13
@@ -242,16 +381,53 @@ def setColor(int zone, value) {
 //    commands(result)
 }
 
-private void sendCommand(def zone, def action, def queryParams=[:]) {
-    updateDNI()
-    log.info("Sending zone ${zone} command ${action} with params ${queryParams} to ${settings.host}")
+private def updateDNI() {
+    if (!state.dni || state.dni != device.deviceNetworkId || (settings.mac && settings.mac != device.deviceNetworkId)) {
+        log.debug("Setting DNI to ${settings.mac}")
+        device.setDeviceNetworkId(settings.mac)
+        state.dni = device.deviceNetworkId
+    }
+}
 
-    sendHubCommand(new physicalgraph.device.HubAction(
-            method: "PUT",
-            path: "/lights/zones/${zone}/${action}",
+def callbackMethod(physicalgraph.device.HubResponse hubResponse) {
+    def json = hubResponse.json
+    log.debug("Received response from server: ${json}")
+    if (!json) {
+        log.warn("Response received from server was invalid: ${hubResponse}")
+    } else if (json.message) {
+        log.info("Received message from server: ${json.message}")
+        refresh();
+    } else if (json.zones) {
+        log.info("Received status information from the server: ${json.zones} (${settings.zones} max zones)")
+        def zonesOn = false
+        for (int zone=1; zone <= settings.zones; zone++) {
+            // The keys end up as strings, so convert to string for them
+            def status = json.zones[zone.toString()] ? 'on' : 'off'
+            log.debug("Setting zone${zone}Switch to ${status}")
+            sendEvent(name:"zone${zone}Switch".toString(), value:status)
+            if (status=='on') {
+                zonesOn = true
+            }
+        }
+        def status = zonesOn ? 'on' : 'off'
+        log.debug("Setting allZonesSwitch to ${status}")
+        sendEvent(name:"allZonesSwitch", value:status)
+    } else {
+        log.warn("Unrecognized response from server, cannot handle: ${hubResponse}")
+    }
+}
+
+private physicalgraph.device.HubAction getCommand(def zone, def action, def queryParams=[:], def method="PUT") {
+    updateDNI()
+    def url = "/lights/zones/${zone}/${action}"
+    log.info("Sending ${method} request to ${settings.host}${url} with params ${queryParams} (${device.deviceNetworkId})")
+
+    return new physicalgraph.device.HubAction(device.deviceNetworkId, [callback:'callbackMethod'],
+            method: method,
+            path: url,
             headers: [
                     HOST: settings.host
             ],
-            query: queryParams
-    ))
+            query: queryParams,
+    )
 }
