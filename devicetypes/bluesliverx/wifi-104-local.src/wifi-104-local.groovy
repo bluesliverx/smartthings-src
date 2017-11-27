@@ -73,13 +73,6 @@ metadata {
         COLORS.each { String name, def colors ->
             command "color${name}"
         }
-//        command "colorFall"
-//        command "colorChristmasGreen"
-//        command "colorChristmasBlue"
-//        command "colorHalloween"
-//        command "colorEaster"
-//        command "colorValentines"
-//        command "colorJulyFourth"
     }
 
     simulator {
