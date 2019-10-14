@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python3
 
 from flask import Flask, request, abort, jsonify
 from timeout_decorator import timeout
@@ -188,7 +188,7 @@ def send_command(command, receive=False, validate_index=False):
             s.close()
     raise Exception('No response received from the controller')
     
-@timeout(1)
+@timeout(1, use_signals=False)
 def receive_response(s, validate_index, expected_frame_index):
     global BUFFER_SIZE
     logger.debug('Waiting for response from endpoint')
